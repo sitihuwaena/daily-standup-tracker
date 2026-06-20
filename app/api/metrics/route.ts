@@ -97,10 +97,11 @@ export async function GET(request: NextRequest) {
 
     if (allEngineers.length === 0) {
       const team: TeamMetrics = {
-        avg_utilization_percent: 0,
-        healthy_workload_percent: 0,
-        burnout_risk_count: 0,
-        underutilized_count: 0,
+        avg_utilization: 0,
+        healthy_workload_pct: 0,
+        burnout_count: 0,
+        underutil_count: 0,
+        engineers: [],
       };
       return NextResponse.json({ data: { month, team, engineers: [] } });
     }
@@ -129,35 +130,37 @@ export async function GET(request: NextRequest) {
         (ABSENCE_VALUES as string[]).includes(r.value)
       ).length;
 
-      const avg_utilization_percent =
+      const avg_utilization =
         working_days > 0 ? activeCount / working_days * 100 : 0;
 
-      const healthy_workload_percent =
+      const healthy_workload_pct =
         activeCount > 0 ? mCount / activeCount * 100 : 0;
 
-      const burnout_streak = calcBurnoutStreak(engRecords);
+      const streak_h = calcBurnoutStreak(engRecords);
 
-      const status = determineStatus(burnout_streak, healthy_workload_percent);
-
+      const status = determineStatus(streak_h, healthy_workload_pct);
       return {
-        engineer,
+        engineer_id: engineer.id,
+        engineer_name: engineer.name,
         status,
-        avg_utilization_percent,
-        healthy_workload_percent,
-        burnout_streak,
-        total_absences: absenceCount,
+        avg_utilization,
+        healthy_workload_pct,
+        streak_h,
+        total_absence: absenceCount,
         working_days,
+        utilization_days: activeCount,
+        absence_days: absenceCount,
       };
     });
 
     // Team metrics
     const totalActiveAcrossAll = engineerMetrics.reduce((sum, em) => {
-      const engRecords = recordsByEngineer.get(em.engineer.id) ?? [];
+      const engRecords = recordsByEngineer.get(em.engineer_id) ?? [];
       return sum + engRecords.filter((r) => (ACTIVE_VALUES as string[]).includes(r.value)).length;
     }, 0);
 
     const totalMAll = engineerMetrics.reduce((sum, em) => {
-      const engRecords = recordsByEngineer.get(em.engineer.id) ?? [];
+      const engRecords = recordsByEngineer.get(em.engineer_id) ?? [];
       return sum + engRecords.filter((r) => r.value === "M").length;
     }, 0);
 
@@ -169,14 +172,15 @@ export async function GET(request: NextRequest) {
     const teamHealthyWorkload =
       totalActiveAcrossAll > 0 ? totalMAll / totalActiveAcrossAll * 100 : 0;
 
-    const burnout_risk_count = engineerMetrics.filter((e) => e.status === "BURNOUT").length;
-    const underutilized_count = engineerMetrics.filter((e) => e.status === "UNDERUTIL").length;
+    const burnout_count = engineerMetrics.filter((e) => e.status === "BURNOUT").length;
+    const underutil_count = engineerMetrics.filter((e) => e.status === "UNDERUTIL").length;
 
     const team: TeamMetrics = {
-      avg_utilization_percent: teamAvgUtil,
-      healthy_workload_percent: teamHealthyWorkload,
-      burnout_risk_count,
-      underutilized_count,
+      avg_utilization: teamAvgUtil,
+      healthy_workload_pct: teamHealthyWorkload,
+      burnout_count,
+      engineers: engineerMetrics,
+      underutil_count,
     };
 
     return NextResponse.json({ data: { month, team, engineers: engineerMetrics } });

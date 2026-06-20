@@ -106,28 +106,29 @@ export async function buildExportData(month: string): Promise<ExportData> {
     const activeCount = engRecords.filter((r) => (ACTIVE_VALUES as string[]).includes(r.value)).length;
     const mCount = engRecords.filter((r) => r.value === "M").length;
     const absenceCount = engRecords.filter((r) => (ABSENCE_VALUES as string[]).includes(r.value)).length;
-    const avg_utilization_percent = working_days > 0 ? activeCount / working_days * 100 : 0;
-    const healthy_workload_percent = activeCount > 0 ? mCount / activeCount * 100 : 0;
-    const burnout_streak = calcBurnoutStreak(engRecords);
-    const status = determineStatus(burnout_streak, healthy_workload_percent);
+    const avg_utilization = working_days > 0 ? activeCount / working_days * 100 : 0;
+    const healthy_workload_pct = activeCount > 0 ? mCount / activeCount * 100 : 0;
+    const streak_h = calcBurnoutStreak(engRecords);
+    const status = determineStatus(streak_h, healthy_workload_pct);
 
-    return { engineer, status, avg_utilization_percent, healthy_workload_percent, burnout_streak, total_absences: absenceCount, working_days };
+    return { engineer_id: engineer.id, engineer_name: engineer.name, status, avg_utilization, healthy_workload_pct, streak_h, total_absence: absenceCount, working_days, utilization_days: activeCount, absence_days: absenceCount };
   });
 
   const totalActive = engineerMetrics.reduce((sum, em) => {
-    const engRecords = recordsByEngineer.get(em.engineer.id) ?? [];
+    const engRecords = recordsByEngineer.get(em.engineer_id) ?? [];
     return sum + engRecords.filter((r) => (ACTIVE_VALUES as string[]).includes(r.value)).length;
   }, 0);
   const totalM = engineerMetrics.reduce((sum, em) => {
-    const engRecords = recordsByEngineer.get(em.engineer.id) ?? [];
+    const engRecords = recordsByEngineer.get(em.engineer_id) ?? [];
     return sum + engRecords.filter((r) => r.value === "M").length;
   }, 0);
 
   const team: TeamMetrics = {
-    avg_utilization_percent: working_days > 0 && allEngineers.length > 0 ? totalActive / (working_days * allEngineers.length) * 100 : 0,
-    healthy_workload_percent: totalActive > 0 ? totalM / totalActive * 100 : 0,
-    burnout_risk_count: engineerMetrics.filter((e) => e.status === "BURNOUT").length,
-    underutilized_count: engineerMetrics.filter((e) => e.status === "UNDERUTIL").length,
+    avg_utilization: working_days > 0 && allEngineers.length > 0 ? totalActive / (working_days * allEngineers.length) * 100 : 0,
+    healthy_workload_pct: totalActive > 0 ? totalM / totalActive * 100 : 0,
+    burnout_count: engineerMetrics.filter((e) => e.status === "BURNOUT").length,
+    underutil_count: engineerMetrics.filter((e) => e.status === "UNDERUTIL").length,
+    engineers: engineerMetrics,
   };
 
   const utilization_grid: UtilizationGridRow[] = allEngineers.map((engineer) => {
@@ -155,6 +156,6 @@ export async function buildExportData(month: string): Promise<ExportData> {
     team_metrics: team,
     engineer_metrics: engineerMetrics,
     utilization_grid,
-    holidays: holidayRows,
+    holidays: holidayRows.map(h => ({ id: h.id, date: h.holiday_date, name: h.name })),
   };
 }

@@ -25,12 +25,6 @@ export async function PATCH(
     }
 
     const result = await db.transaction(async (tx) => {
-      const [existing] = await tx
-        .select()
-        .from(utilizationRecords)
-        .where(
-          eq(utilizationRecords.engineer_id, report.engineer_id)
-        );
 
       // Check specific date conflict
       const allRecords = await tx

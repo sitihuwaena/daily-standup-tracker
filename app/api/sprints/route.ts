@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { sprints, projects } from "@/lib/db/schema";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { validateRequest } from "@/lib/auth/validate-request";
 
 export async function GET(request: NextRequest) {

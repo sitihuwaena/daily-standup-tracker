@@ -1,19 +1,20 @@
 export type UtilizationValue = 'L' | 'M' | 'H' | 'C' | 'S' | 'I' | 'I*' | 'F'
 
 export type UtilizationStatus = 'HEALTHY' | 'MONITOR' | 'BURNOUT' | 'UNDERUTIL'
+export type EngineerStatus = UtilizationStatus
 
 export type Engineer = {
   id: string
   name: string
   is_active: boolean
-  created_at?: string
+  created_at?: Date
 }
 
 export type Project = {
   id: string
   name: string
   is_active: boolean
-  created_at?: string
+  created_at?: Date
 }
 
 export type Sprint = {
@@ -74,4 +75,24 @@ export type StandupEntry = {
   today: string
   blockers: string
   submitted_at: string
+}
+
+export type UtilizationGridCell = {
+  date: string
+  value: UtilizationValue | null
+  source: 'auto' | 'manual' | 'weekend' | 'holiday' | null
+}
+
+export type UtilizationGridRow = {
+  engineer: Engineer
+  cells: UtilizationGridCell[]
+}
+
+export type ExportData = {
+  month: string
+  generated_at: string
+  team_metrics: TeamMetrics
+  engineer_metrics: EngineerMetrics[]
+  utilization_grid: UtilizationGridRow[]
+  holidays: Holiday[]
 }

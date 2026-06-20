@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { StandupEntry } from "@/types"
-import { Select } from "@/components/ui/select"
 
 function SkeletonRow() {
   return (
@@ -20,7 +19,7 @@ export default function ReviewPage() {
   const [entries, setEntries] = useState<StandupEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [date, setDate] = useState(new Date().toISOString().split("T")[0])
-  const [engineerFilter, setEngineerFilter] = useState("")
+  const [engineerFilter] = useState("")
   const [selected, setSelected] = useState<StandupEntry | null>(null)
 
   const fetchStandups = useCallback(async () => {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Select } from "@/components/ui/select"
@@ -542,7 +542,7 @@ const tabs: { key: Tab; label: string }[] = [
   { key: "holidays", label: "Holidays" },
 ]
 
-export default function MasterDataPage() {
+function MasterDataContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const activeTab = (searchParams.get("tab") as Tab) || "engineers"
@@ -574,5 +574,13 @@ export default function MasterDataPage() {
       {activeTab === "sprints" && <SprintsTab />}
       {activeTab === "holidays" && <HolidaysTab />}
     </div>
+  )
+}
+
+export default function MasterDataPage() {
+  return (
+    <Suspense fallback={<div className="p-6"><div className="h-8 w-48 bg-gray-200 rounded animate-pulse" /></div>}>
+      <MasterDataContent />
+    </Suspense>
   )
 }

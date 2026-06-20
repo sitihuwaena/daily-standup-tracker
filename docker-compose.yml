@@ -19,7 +19,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://standup_user:***@db:5432/standup_db
+      DATABASE_URL: postgresql://standup_user:standup_pass@db:5432/standup_db
       NODE_ENV: production
     depends_on:
       - db

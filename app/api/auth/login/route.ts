@@ -1,32 +1,69 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server";
+import { verify } from "@node-rs/argon2";
+import { lucia } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { authUser } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 export async function POST(req: NextRequest) {
-  const { email, password } = await req.json()
+  try {
+    const { email, password } = await req.json();
 
-  const backendUrl = process.env.BACKEND_URL || "http://localhost:3001"
-  const res = await fetch(`${backendUrl}/api/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  })
+    if (!email || !password) {
+      return NextResponse.json(
+        { message: "Email dan password harus diisi" },
+        { status: 400 }
+      );
+    }
 
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}))
+    // Find user by email
+    const users = await db
+      .select()
+      .from(authUser)
+      .where(eq(authUser.email, email.toLowerCase()))
+      .limit(1);
+
+    if (users.length === 0) {
+      return NextResponse.json(
+        { message: "Email atau password salah" },
+        { status: 401 }
+      );
+    }
+
+    const user = users[0];
+
+    // Verify password
+    const validPassword = await verify(user.hashed_password, password, {
+      memoryCost: 19456,
+      timeCost: 2,
+      outputLen: 32,
+      parallelism: 1,
+    });
+
+    if (!validPassword) {
+      return NextResponse.json(
+        { message: "Email atau password salah" },
+        { status: 401 }
+      );
+    }
+
+    // Create session
+    const session = await lucia.createSession(user.id, {});
+    const sessionCookie = lucia.createSessionCookie(session.id);
+
+    const response = NextResponse.json({ ok: true });
+    response.cookies.set(
+      sessionCookie.name,
+      sessionCookie.value,
+      sessionCookie.attributes
+    );
+
+    return response;
+  } catch (error) {
+    console.error("Login error:", error);
     return NextResponse.json(
-      { message: data.message || "Email atau password salah" },
-      { status: res.status }
-    )
+      { message: "Terjadi kesalahan server" },
+      { status: 500 }
+    );
   }
-
-  const data = await res.json()
-  const token = data.token
-
-  const response = NextResponse.json({ ok: true })
-  response.cookies.set("pm_token", token, {
-    httpOnly: true,
-    path: "/",
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 7,
-  })
-  return response
 }

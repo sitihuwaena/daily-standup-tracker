@@ -20,7 +20,7 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://standup_user:standup_pass@db:5432/standup_db
-      NODE_ENV: production
+      NODE_ENV: development
     depends_on:
       - db
     ports:

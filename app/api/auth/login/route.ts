@@ -32,13 +32,8 @@ export async function POST(req: NextRequest) {
 
     const user = users[0];
 
-    // Verify password
-    const validPassword = await verify(user.hashed_password, password, {
-      memoryCost: 19456,
-      timeCost: 2,
-      outputLen: 32,
-      parallelism: 1,
-    });
+    // Verify password (using default argon2 config to match seed script)
+    const validPassword = await verify(user.hashed_password, password);
 
     if (!validPassword) {
       return NextResponse.json(
